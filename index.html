@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kitap Sayacı</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+font-family:Arial;
+background:#f2f5f9;
+margin:0;
+padding:20px;
+}
+
+h1{
+text-align:center;
+}
+
+.container{
+max-width:500px;
+margin:auto;
+}
+
+.card{
+background:white;
+padding:15px;
+margin-top:15px;
+border-radius:12px;
+box-shadow:0 3px 10px rgba(0,0,0,0.1);
+}
+
+input{
+width:100%;
+padding:10px;
+margin-top:8px;
+border-radius:8px;
+border:1px solid #ccc;
+}
+
+button{
+width:100%;
+padding:10px;
+margin-top:10px;
+border:none;
+background:#007aff;
+color:white;
+border-radius:8px;
+font-size:16px;
+}
+
+.delete{
+background:#ff3b30;
+}
+
+.edit{
+background:#ff9500;
+}
+
+.progress{
+font-size:18px;
+margin-top:10px;
+}
+
+.entry{
+border-bottom:1px solid #eee;
+padding:10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>📚 Kitap Takip</h1>
+
+<div class="container">
+
+<div class="card">
+
+<h3>Günlük Okuma</h3>
+
+<input id="book" placeholder="Kitap adı">
+
+<input id="pages" type="number" placeholder="Okunan sayfa">
+
+<button onclick="addEntry()">Kaydet</button>
+
+</div>
+
+<div class="card">
+
+<h3>Hedefler</h3>
+
+<input id="dailyGoal" type="number" placeholder="Günlük hedef">
+
+<input id="monthlyGoal" type="number" placeholder="Aylık hedef">
+
+<button onclick="saveGoals()">Hedefleri Kaydet</button>
+
+</div>
+
+<div class="card">
+
+<h3>İlerleme</h3>
+
+<div class="progress" id="progressText"></div>
+
+<canvas id="chart"></canvas>
+
+</div>
+
+<div class="card">
+
+<h3>Kayıtlar</h3>
+
+<div id="entries"></div>
+
+</div>
+
+</div>
+
+<script>
+
+let entries = JSON.parse(localStorage.getItem("entries")) || []
+
+let dailyGoal = localStorage.getItem("dailyGoal") || 0
+let monthlyGoal = localStorage.getItem("monthlyGoal") || 0
+
+function saveGoals(){
+
+dailyGoal=document.getElementById("dailyGoal").value
+monthlyGoal=document.getElementById("monthlyGoal").value
+
+localStorage.setItem("dailyGoal",dailyGoal)
+localStorage.setItem("monthlyGoal",monthlyGoal)
+
+updateProgress()
+
+}
+
+function addEntry(){
+
+let book=document.getElementById("book").value
+let pages=parseInt(document.getElementById("pages").value)
+
+if(!book||!pages)return
+
+entries.push({
+book:book,
+pages:pages,
+date:new Date().toLocaleDateString()
+})
+
+localStorage.setItem("entries",JSON.stringify(entries))
+
+document.getElementById("book").value=""
+document.getElementById("pages").value=""
+
+renderEntries()
+updateProgress()
+
+}
+
+function deleteEntry(i){
+
+entries.splice(i,1)
+
+localStorage.setItem("entries",JSON.stringify(entries))
+
+renderEntries()
+updateProgress()
+
+}
+
+function editEntry(i){
+
+let newBook=prompt("Yeni kitap adı",entries[i].book)
+let newPages=prompt("Yeni sayfa",entries[i].pages)
+
+if(newBook) entries[i].book=newBook
+if(newPages) entries[i].pages=parseInt(newPages)
+
+localStorage.setItem("entries",JSON.stringify(entries))
+
+renderEntries()
+updateProgress()
+
+}
+
+function renderEntries(){
+
+let div=document.getElementById("entries")
+
+div.innerHTML=""
+
+entries.forEach((e,i)=>{
+
+div.innerHTML+=`
+<div class="entry">
+
+<b>${e.book}</b><br>
+${e.pages} sayfa<br>
+${e.date}
+
+<br>
+
+<button class="edit" onclick="editEntry(${i})">Düzenle</button>
+
+<button class="delete" onclick="deleteEntry(${i})">Sil</button>
+
+</div>
+`
+
+})
+
+}
+
+function updateProgress(){
+
+let total=entries.reduce((sum,e)=>sum+e.pages,0)
+
+document.getElementById("progressText").innerText=
+"Toplam okunan sayfa: "+total
+
+drawChart()
+
+}
+
+function drawChart(){
+
+let data=entries.map(e=>e.pages)
+
+let labels=entries.map(e=>e.date)
+
+new Chart(document.getElementById("chart"),{
+type:"line",
+data:{
+labels:labels,
+datasets:[{
+label:"Okunan Sayfa",
+data:data
+}]
+}
+})
+
+}
+
+renderEntries()
+updateProgress()
+
+</script>
+
+</body>
+</html>
